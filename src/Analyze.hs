@@ -10,6 +10,7 @@ module Analyze
 import Control.Error
 import Control.Monad (unless)
 import Control.Monad.State (MonadState(..), StateT, execStateT, modify)
+import Control.Monad.IO.Class
 import Data.Monoid
 import qualified Data.Set as S
 import Data.Traversable
@@ -19,14 +20,14 @@ import System.FilePath (takeFileName)
 import Archive
 import Types
 
-analyzeFiles :: [Analyzer (StateT Deps IO)] -> Manifest
-             -> IO [(ByteString, Deps)]
+analyzeFiles :: MonadIO m => [Analyzer (StateT Deps m)] -> Manifest
+             -> m [(ByteString, Deps)]
 analyzeFiles analyzers = mapM $ \(name, srcPath) -> do
     files <- archiveList srcPath
     deps <- flip execStateT mempty $ forM files $ \file -> do
         let listeners = mapMaybe ($ file) analyzers
         unless (null listeners) $ do
-            contents <- archiveView srcPath file
+            contents <- liftIO $ archiveView srcPath file
             mapM_ ($ contents) listeners
     return (name, deps)
 
