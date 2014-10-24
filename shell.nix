@@ -1,4 +1,4 @@
-{ nixpkgs ? import ../../../.. {}
+{ nixpkgs ? import <nixpkgs> {}
 , haskellPackages ? nixpkgs.haskellPackages
 }:
 
