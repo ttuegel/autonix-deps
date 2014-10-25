@@ -41,6 +41,6 @@ instance Monoid Deps where
         , propagatedUserEnvPkgs = (mappend `on` propagatedUserEnvPkgs) a b
         }
 
-type Analyzer m = FilePath -> Maybe (ByteString -> m ())
+type Analyzer m = FilePath -> IO ByteString -> m ()
 
 type Manifest = [(ByteString, FilePath)]

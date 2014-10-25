@@ -9,7 +9,7 @@ module Analyze
        ) where
 
 import Control.Error
-import Control.Monad (unless)
+import Control.Monad (when, unless)
 import Control.Monad.State (MonadState(..), StateT, execStateT, modify)
 import Control.Monad.IO.Class
 import Data.Monoid
@@ -35,16 +35,13 @@ analyzeFiles :: MonadIO m => [Analyzer (StateT Deps m)]
 analyzeFiles analyzers _ srcPath = do
     files <- archiveList srcPath
     deps <- flip execStateT mempty $ forM files $ \file -> do
-        let listeners = mapMaybe ($ file) analyzers
-        unless (null listeners) $ do
-            contents <- liftIO $ archiveView srcPath file
-            mapM_ ($ contents) listeners
+        let getFile = archiveView srcPath file
+        mapM_ (\act -> act file getFile) analyzers
     return deps
 
-matchFileName :: FilePath -> a -> FilePath -> Maybe a
-matchFileName name a path
-    | takeFileName path == name = Just a
-    | otherwise = Nothing
+matchFileName :: Monad m => FilePath -> (IO ByteString -> m ()) -> FilePath
+              -> IO ByteString -> m ()
+matchFileName name act path = when (takeFileName path == name) . act
 
 addBuildInput :: MonadState Deps m => ByteString -> m ()
 addBuildInput input = modify $ \deps ->
