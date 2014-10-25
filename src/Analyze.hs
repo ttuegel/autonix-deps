@@ -3,18 +3,11 @@
 module Analyze
        ( analyzeFiles
        , analyzePackages
-       , addBuildInput
-       , addNativeBuildInput
        , matchFileName
        ) where
 
-import Control.Error
-import Control.Monad (when, unless)
-import Control.Monad.State (MonadState(..), StateT, execStateT, modify)
-import Control.Monad.IO.Class
+import Control.Monad.State
 import Data.Monoid
-import qualified Data.Set as S
-import Data.Traversable
 import Prelude hiding (mapM)
 import System.FilePath (takeFileName)
 
@@ -42,15 +35,3 @@ analyzeFiles analyzers _ srcPath = do
 matchFileName :: Monad m => FilePath -> (IO ByteString -> m ()) -> FilePath
               -> IO ByteString -> m ()
 matchFileName name act path = when (takeFileName path == name) . act
-
-addBuildInput :: MonadState Deps m => ByteString -> m ()
-addBuildInput input = modify $ \deps ->
-    if input `S.member` buildInputs deps
-       then deps
-    else deps { buildInputs = S.insert input $ buildInputs deps }
-
-addNativeBuildInput :: MonadState Deps m => ByteString -> m ()
-addNativeBuildInput input = modify $ \deps ->
-    if input `S.member` nativeBuildInputs deps
-       then deps
-    else deps { nativeBuildInputs = S.insert input $ nativeBuildInputs deps }

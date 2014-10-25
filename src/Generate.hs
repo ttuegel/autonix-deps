@@ -2,6 +2,7 @@
 
 module Generate where
 
+import Control.Lens
 import Control.Monad.IO.Class
 import qualified Data.ByteString.Char8 as B
 import Data.Monoid
@@ -35,7 +36,7 @@ packageDeps (name, deps) =
     , "  };"
     ]
   where
-    listInputs f = B.unwords $ map quoted $ S.toList $ f deps
+    listInputs l = B.unwords $ map quoted $ S.toList $ deps^.l
     quoted str = "\"" <> str <> "\""
 
 depsToNix :: [(ByteString, Deps)] -> ByteString

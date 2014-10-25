@@ -1,45 +1,48 @@
+{-# LANGUAGE TemplateHaskell #-}
+
 module Types
        ( Analyzer
-       , Deps(..)
+       , Deps, buildInputs, nativeBuildInputs
+       , propagatedBuildInputs, propagatedNativeBuildInputs
+       , propagatedUserEnvPkgs
        , Manifest
        , module Data.ByteString
        , module Data.Set
        ) where
 
+import Control.Lens
+import Control.Monad.State
 import Data.ByteString (ByteString)
-import Data.Function (on)
 import Data.Monoid
 import Data.Set (Set)
 import qualified Data.Set as S
 
 data Deps =
     Deps
-    { buildInputs :: Set ByteString
-    , nativeBuildInputs :: Set ByteString
-    , propagatedBuildInputs :: Set ByteString
-    , propagatedNativeBuildInputs :: Set ByteString
-    , propagatedUserEnvPkgs :: Set ByteString
+    { _buildInputs :: Set ByteString
+    , _nativeBuildInputs :: Set ByteString
+    , _propagatedBuildInputs :: Set ByteString
+    , _propagatedNativeBuildInputs :: Set ByteString
+    , _propagatedUserEnvPkgs :: Set ByteString
     }
+makeLenses ''Deps
 
 instance Monoid Deps where
     mempty =
         Deps
-        { buildInputs = S.empty
-        , nativeBuildInputs = S.empty
-        , propagatedBuildInputs = S.empty
-        , propagatedNativeBuildInputs = S.empty
-        , propagatedUserEnvPkgs = S.empty
+        { _buildInputs = S.empty
+        , _nativeBuildInputs = S.empty
+        , _propagatedBuildInputs = S.empty
+        , _propagatedNativeBuildInputs = S.empty
+        , _propagatedUserEnvPkgs = S.empty
         }
 
-    mappend a b =
-        Deps
-        { buildInputs = (mappend `on` buildInputs) a b
-        , nativeBuildInputs = (mappend `on` nativeBuildInputs) a b
-        , propagatedBuildInputs = (mappend `on` propagatedBuildInputs) a b
-        , propagatedNativeBuildInputs =
-            (mappend `on` propagatedNativeBuildInputs) a b
-        , propagatedUserEnvPkgs = (mappend `on` propagatedUserEnvPkgs) a b
-        }
+    mappend a = execState $ do
+        buildInputs %= mappend (a^.buildInputs)
+        nativeBuildInputs %= mappend (a^.nativeBuildInputs)
+        propagatedBuildInputs %= mappend (a^.propagatedBuildInputs)
+        propagatedNativeBuildInputs %= mappend (a^.propagatedNativeBuildInputs)
+        propagatedUserEnvPkgs %= mappend (a^.propagatedUserEnvPkgs)
 
 type Analyzer m = FilePath -> IO ByteString -> m ()
 
