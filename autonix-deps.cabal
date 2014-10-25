@@ -14,8 +14,10 @@ library
   exposed-modules:
     Analyze
     Archive
+    Args
     CMake
     Deps
+    Generate
     Manifest
     Regex
     Types

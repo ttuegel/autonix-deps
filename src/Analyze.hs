@@ -2,6 +2,7 @@
 
 module Analyze
        ( analyzeFiles
+       , analyzePackages
        , addBuildInput
        , addNativeBuildInput
        , matchFileName
@@ -18,18 +19,27 @@ import Prelude hiding (mapM)
 import System.FilePath (takeFileName)
 
 import Archive
+import Manifest
 import Types
 
-analyzeFiles :: MonadIO m => [Analyzer (StateT Deps m)] -> Manifest
-             -> m [(ByteString, Deps)]
-analyzeFiles analyzers = mapM $ \(name, srcPath) -> do
+analyzePackages :: MonadIO m => (ByteString -> FilePath -> m Deps)
+                -> m [(ByteString, Deps)]
+analyzePackages perPackage = do
+    manifest <- readManifest
+    deps <- mapM (uncurry perPackage) manifest
+    let (names, _) = unzip manifest
+    return $ zip names deps
+
+analyzeFiles :: MonadIO m => [Analyzer (StateT Deps m)]
+             -> ByteString -> FilePath -> m Deps
+analyzeFiles analyzers _ srcPath = do
     files <- archiveList srcPath
     deps <- flip execStateT mempty $ forM files $ \file -> do
         let listeners = mapMaybe ($ file) analyzers
         unless (null listeners) $ do
             contents <- liftIO $ archiveView srcPath file
             mapM_ ($ contents) listeners
-    return (name, deps)
+    return deps
 
 matchFileName :: FilePath -> a -> FilePath -> Maybe a
 matchFileName name a path
