@@ -4,11 +4,13 @@ import Control.Applicative
 import Control.Error
 import Control.Monad (liftM)
 import Control.Monad.IO.Class
+import Data.ByteString (ByteString)
 import qualified Data.ByteString.Char8 as B
 import Text.XML.Light
 
 import Args
-import Types
+
+type Manifest = [(ByteString, FilePath)]
 
 readManifest :: MonadIO m => m Manifest
 readManifest =

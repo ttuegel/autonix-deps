@@ -19,8 +19,8 @@ library
     Deps
     Generate
     Manifest
+    PackageDeps
     Regex
-    Types
   build-depends:
       base >=4.7 && <5
     , bytestring >=0.10

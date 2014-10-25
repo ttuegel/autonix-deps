@@ -1,36 +1,33 @@
 {-# LANGUAGE FlexibleContexts #-}
 
 module Analyze
-       ( analyzeFiles
+       ( Analyzer
+       , analyzeFiles
        , analyzePackages
        , matchFileName
        ) where
 
 import Control.Monad.State
-import Data.Monoid
+import Data.ByteString (ByteString)
 import Prelude hiding (mapM)
 import System.FilePath (takeFileName)
 
 import Archive
 import Manifest
-import Types
 
-analyzePackages :: MonadIO m => (ByteString -> FilePath -> m a)
-                -> m [(ByteString, a)]
+type Analyzer m = ByteString -> FilePath -> IO ByteString -> m ()
+
+analyzePackages :: MonadIO m => (ByteString -> FilePath -> m a) -> m ()
 analyzePackages perPackage = do
     manifest <- readManifest
-    deps <- mapM (uncurry perPackage) manifest
-    let (names, _) = unzip manifest
-    return $ zip names deps
+    mapM_ (uncurry perPackage) manifest
 
-analyzeFiles :: MonadIO m => [Analyzer (StateT Deps m)]
-             -> ByteString -> FilePath -> m Deps
-analyzeFiles analyzers _ srcPath = do
+analyzeFiles :: MonadIO m => [Analyzer m] -> ByteString -> FilePath -> m ()
+analyzeFiles analyzers pkg srcPath = do
     files <- archiveList srcPath
-    deps <- flip execStateT mempty $ forM files $ \file -> do
+    forM_ files $ \file -> do
         let getFile = archiveView srcPath file
-        mapM_ (\act -> act file getFile) analyzers
-    return deps
+        mapM_ (\act -> act pkg file getFile) analyzers
 
 matchFileName :: Monad m => FilePath -> (IO ByteString -> m ()) -> FilePath
               -> IO ByteString -> m ()
