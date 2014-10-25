@@ -15,8 +15,8 @@ import Archive
 import Manifest
 import Types
 
-analyzePackages :: MonadIO m => (ByteString -> FilePath -> m Deps)
-                -> m [(ByteString, Deps)]
+analyzePackages :: MonadIO m => (ByteString -> FilePath -> m a)
+                -> m [(ByteString, a)]
 analyzePackages perPackage = do
     manifest <- readManifest
     deps <- mapM (uncurry perPackage) manifest
