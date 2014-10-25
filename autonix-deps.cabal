@@ -21,6 +21,7 @@ library
     Autonix.Manifest
     Autonix.PackageDeps
     Autonix.Regex
+    Autonix.Renamed
   build-depends:
       base >=4.7 && <5
     , bytestring >=0.10

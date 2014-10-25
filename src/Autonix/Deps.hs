@@ -2,7 +2,8 @@
 {-# LANGUAGE TemplateHaskell #-}
 
 module Autonix.Deps
-       ( Deps, deps, HasDeps(..)
+       ( AddDeps, AddDep
+       , Deps, deps, HasDeps(..)
        , addBuildInput, addNativeBuildInput
        , addPropagatedBuildInput, addPropagatedNativeBuildInput
        , addPropagatedUserEnvPkg
