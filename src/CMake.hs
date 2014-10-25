@@ -2,8 +2,9 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 module CMake
-       ( detectCMake
-       , analyzeCMakeDeps
+       ( analyzeCMakeDeps
+       , cmakeAnalyzers
+       , detectCMake
        ) where
 
 import Control.Lens
@@ -26,3 +27,6 @@ analyzeCMakeDeps = matchFileName "CMakeLists.txt" $ \getFile -> do
     let new = concatMap (take 1 . drop 1) $ match regex contents
         regex = makeRegex "find_package\\([[:space:]]*([^[:space:],$\\)]+)"
     mapM_ (\x -> buildInputs %= S.insert x) new
+
+cmakeAnalyzers :: (MonadIO m, MonadState Deps m) => [Analyzer m]
+cmakeAnalyzers = [detectCMake, analyzeCMakeDeps]
