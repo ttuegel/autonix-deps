@@ -1,6 +1,6 @@
 {-# LANGUAGE TemplateHaskell #-}
 
-module PackageDeps
+module Autonix.PackageDeps
        ( PackageDeps
        , _buildInputs, _nativeBuildInputs
        , _propagatedBuildInputs, _propagatedNativeBuildInputs

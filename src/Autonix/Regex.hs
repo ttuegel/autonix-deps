@@ -1,4 +1,4 @@
-module Regex (match, makeRegex) where
+module Autonix.Regex (match, makeRegex) where
 
 import Data.ByteString (ByteString)
 import Text.Regex.TDFA (Regex)

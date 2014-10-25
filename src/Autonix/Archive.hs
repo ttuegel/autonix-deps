@@ -1,4 +1,4 @@
-module Archive (archiveList, archiveView) where
+module Autonix.Archive (archiveList, archiveView) where
 
 import Control.Applicative
 import Control.Monad.IO.Class

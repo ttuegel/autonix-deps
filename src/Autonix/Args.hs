@@ -1,4 +1,4 @@
-module Args where
+module Autonix.Args where
 
 import Control.Applicative
 import System.Environment (getArgs)

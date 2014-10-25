@@ -1,6 +1,6 @@
 {-# LANGUAGE FlexibleContexts #-}
 
-module Analyze
+module Autonix.Analyze
        ( Analyzer
        , analyzeFiles
        , analyzePackages
@@ -12,8 +12,8 @@ import Data.ByteString (ByteString)
 import Prelude hiding (mapM)
 import System.FilePath (takeFileName)
 
-import Archive
-import Manifest
+import Autonix.Archive
+import Autonix.Manifest
 
 type Analyzer m = ByteString -> FilePath -> IO ByteString -> m ()
 

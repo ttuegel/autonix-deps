@@ -1,7 +1,7 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE OverloadedStrings #-}
 
-module CMake
+module Autonix.CMake
        ( analyzeCMakePackages
        , analyzeCMakePrograms
        , cmakeAnalyzers
@@ -11,9 +11,9 @@ module CMake
 import Control.Monad.IO.Class
 import Control.Monad.State
 
-import Analyze
-import Deps
-import Regex
+import Autonix.Analyze
+import Autonix.Deps
+import Autonix.Regex
 
 detectCMake :: MonadState Deps m => Analyzer m
 detectCMake pkg =

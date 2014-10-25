@@ -1,4 +1,4 @@
-module Manifest (readManifest) where
+module Autonix.Manifest (readManifest) where
 
 import Control.Applicative
 import Control.Error
@@ -8,7 +8,7 @@ import Data.ByteString (ByteString)
 import qualified Data.ByteString.Char8 as B
 import Text.XML.Light
 
-import Args
+import Autonix.Args
 
 type Manifest = [(ByteString, FilePath)]
 

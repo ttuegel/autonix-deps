@@ -1,7 +1,7 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE TemplateHaskell #-}
 
-module Deps
+module Autonix.Deps
        ( Deps, deps, HasDeps(..)
        , addBuildInput, addNativeBuildInput
        , addPropagatedBuildInput, addPropagatedNativeBuildInput
@@ -14,29 +14,29 @@ import qualified Data.Map as M
 import Data.Monoid
 import qualified Data.Set as S
 
-import PackageDeps
+import Autonix.PackageDeps
+
+type AddDeps m = ByteString -> [ByteString] -> m ()
+type AddDep m = ByteString -> ByteString -> m ()
 
 class HasDeps a where
-    addBuildInputs :: MonadState a m => ByteString -> [ByteString] -> m ()
-    addNativeBuildInputs :: MonadState a m => ByteString -> [ByteString] -> m ()
-    addPropagatedBuildInputs :: MonadState a m => ByteString -> [ByteString] -> m ()
-    addPropagatedNativeBuildInputs :: MonadState a m => ByteString -> [ByteString] -> m ()
-    addPropagatedUserEnvPkgs :: MonadState a m => ByteString -> [ByteString] -> m ()
+    addBuildInputs :: MonadState a m => AddDeps m
+    addNativeBuildInputs :: MonadState a m => AddDeps m
+    addPropagatedBuildInputs :: MonadState a m => AddDeps m
+    addPropagatedNativeBuildInputs :: MonadState a m => AddDeps m
+    addPropagatedUserEnvPkgs :: MonadState a m => AddDeps m
 
 newtype Deps = Deps { _deps :: Map ByteString PackageDeps }
 makeLenses ''Deps
 
 addDeps :: MonadState Deps m
-        => ASetter' PackageDeps (Set ByteString)
-        -> ByteString -> [ByteString] -> m ()
+        => ASetter' PackageDeps (Set ByteString) -> AddDeps m
 addDeps l pkg inputs = do
     let pdeps :: PackageDeps
         pdeps = mempty & l .~ S.fromList inputs
     deps %= M.insertWith (<>) pkg pdeps
 
-addDep :: (HasDeps a, MonadState a m)
-       => (ByteString -> [ByteString] -> m ())
-       -> ByteString -> ByteString -> m ()
+addDep :: (HasDeps a, MonadState a m) => AddDeps m -> AddDep m
 addDep f pkg input = f pkg [input]
 
 instance HasDeps Deps where
@@ -46,22 +46,17 @@ instance HasDeps Deps where
     addPropagatedNativeBuildInputs = addDeps _propagatedNativeBuildInputs
     addPropagatedUserEnvPkgs = addDeps _propagatedUserEnvPkgs
 
-addBuildInput :: (HasDeps a, MonadState a m)
-              => ByteString -> ByteString -> m ()
+addBuildInput :: (HasDeps a, MonadState a m) => AddDep m
 addBuildInput = addDep addBuildInputs
 
-addNativeBuildInput :: (HasDeps a, MonadState a m)
-                    => ByteString -> ByteString -> m ()
+addNativeBuildInput :: (HasDeps a, MonadState a m) => AddDep m
 addNativeBuildInput = addDep addNativeBuildInputs
 
-addPropagatedBuildInput :: (HasDeps a, MonadState a m)
-                        => ByteString -> ByteString -> m ()
+addPropagatedBuildInput :: (HasDeps a, MonadState a m) => AddDep m
 addPropagatedBuildInput = addDep addPropagatedBuildInputs
 
-addPropagatedNativeBuildInput :: (HasDeps a, MonadState a m)
-                              => ByteString -> ByteString -> m ()
+addPropagatedNativeBuildInput :: (HasDeps a, MonadState a m) => AddDep m
 addPropagatedNativeBuildInput = addDep addPropagatedNativeBuildInputs
 
-addPropagatedUserEnvPkg :: (HasDeps a, MonadState a m)
-                        => ByteString -> ByteString -> m ()
+addPropagatedUserEnvPkg :: (HasDeps a, MonadState a m) => AddDep m
 addPropagatedUserEnvPkg = addDep addPropagatedUserEnvPkgs

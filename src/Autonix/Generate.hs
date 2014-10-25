@@ -1,7 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ViewPatterns #-}
 
-module Generate (generateDeps, writeDeps) where
+module Autonix.Generate (generateDeps, writeDeps) where
 
 import Control.Lens
 import Control.Monad.IO.Class
@@ -11,9 +11,9 @@ import qualified Data.Map as M
 import Data.Monoid
 import qualified Data.Set as S
 
-import Analyze
-import Deps
-import PackageDeps
+import Autonix.Analyze
+import Autonix.Deps
+import Autonix.PackageDeps
 
 generateDeps :: MonadIO m => [Analyzer (StateT Deps m)] -> StateT Deps m ()
 generateDeps analyzers = do

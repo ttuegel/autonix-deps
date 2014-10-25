@@ -12,15 +12,15 @@ cabal-version:       >=1.10
 
 library
   exposed-modules:
-    Analyze
-    Archive
-    Args
-    CMake
-    Deps
-    Generate
-    Manifest
-    PackageDeps
-    Regex
+    Autonix.Analyze
+    Autonix.Archive
+    Autonix.Args
+    Autonix.CMake
+    Autonix.Deps
+    Autonix.Generate
+    Autonix.Manifest
+    Autonix.PackageDeps
+    Autonix.Regex
   build-depends:
       base >=4.7 && <5
     , bytestring >=0.10
