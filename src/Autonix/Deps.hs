@@ -19,8 +19,15 @@ import Autonix.PackageDeps
 
 type AddDeps m = ByteString -> [ByteString] -> m ()
 type AddDep m = ByteString -> ByteString -> m ()
+type PerPkg = Map ByteString (Set ByteString)
+type GetDeps a = Getting PerPkg a PerPkg
 
 class HasDeps a where
+    buildInputs :: GetDeps a
+    nativeBuildInputs :: GetDeps a
+    propagatedBuildInputs :: GetDeps a
+    propagatedNativeBuildInputs :: GetDeps a
+    propagatedUserEnvPkgs :: GetDeps a
     addBuildInputs :: MonadState a m => AddDeps m
     addNativeBuildInputs :: MonadState a m => AddDeps m
     addPropagatedBuildInputs :: MonadState a m => AddDeps m
@@ -41,6 +48,14 @@ addDep :: (HasDeps a, MonadState a m) => AddDeps m -> AddDep m
 addDep f pkg input = f pkg [input]
 
 instance HasDeps Deps where
+    buildInputs = deps . to (M.map $ view _buildInputs)
+    nativeBuildInputs = deps . to (M.map $ view _nativeBuildInputs)
+    propagatedBuildInputs =
+        deps . to (M.map $ view _propagatedBuildInputs)
+    propagatedNativeBuildInputs =
+        deps . to (M.map $ view _propagatedNativeBuildInputs)
+    propagatedUserEnvPkgs =
+        deps . to (M.map $ view _propagatedUserEnvPkgs)
     addBuildInputs = addDeps _buildInputs
     addNativeBuildInputs = addDeps _nativeBuildInputs
     addPropagatedBuildInputs = addDeps _propagatedBuildInputs
