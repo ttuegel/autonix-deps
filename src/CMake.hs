@@ -2,7 +2,8 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 module CMake
-       ( analyzeCMakeDeps
+       ( analyzeCMakePackages
+       , analyzeCMakePrograms
        , cmakeAnalyzers
        , detectCMake
        ) where
@@ -21,12 +22,19 @@ detectCMake =
     matchFileName "CMakeLists.txt" $ const
     $ nativeBuildInputs %= S.insert "cmake"
 
-analyzeCMakeDeps :: (MonadIO m, MonadState Deps m) => Analyzer m
-analyzeCMakeDeps = matchFileName "CMakeLists.txt" $ \getFile -> do
+analyzeCMakePackages :: (MonadIO m, MonadState Deps m) => Analyzer m
+analyzeCMakePackages = matchFileName "CMakeLists.txt" $ \getFile -> do
     contents <- liftIO getFile
     let new = concatMap (take 1 . drop 1) $ match regex contents
         regex = makeRegex "find_package\\([[:space:]]*([^[:space:],$\\)]+)"
     mapM_ (\x -> buildInputs %= S.insert x) new
 
+analyzeCMakePrograms :: (MonadIO m, MonadState Deps m) => Analyzer m
+analyzeCMakePrograms = matchFileName "CMakeLists.txt" $ \getFile -> do
+    contents <- liftIO getFile
+    let new = concatMap (take 1 . drop 1) $ match regex contents
+        regex = makeRegex "find_program\\([[:space:]]*([^[:space:],$\\)]+)"
+    mapM_ (\x -> nativeBuildInputs %= S.insert x) new
+
 cmakeAnalyzers :: (MonadIO m, MonadState Deps m) => [Analyzer m]
-cmakeAnalyzers = [detectCMake, analyzeCMakeDeps]
+cmakeAnalyzers = [detectCMake, analyzeCMakePackages, analyzeCMakePrograms]
