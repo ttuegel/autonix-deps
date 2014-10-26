@@ -3,7 +3,7 @@
 
 module Autonix.Renamed
        ( Renamed, renames, deps
-       , HasDeps(..)
+       , HasDeps(..), rename
        ) where
 
 import Control.Lens
@@ -37,3 +37,9 @@ renameAll names = execState $ do
     _propagatedUserEnvPkgs %= S.map rnm
   where
     rnm nm = fromMaybe nm $ M.lookup nm names
+
+rename :: MonadState Renamed m => ByteString -> ByteString -> m ()
+rename old new = do
+    renames %= M.insert old new
+    deps %= M.map (renameAll $ M.singleton old new)
+    deps %= M.mapKeys (\pkg -> if pkg == old then new else pkg)
