@@ -27,6 +27,15 @@ data Deps =
          }
 makeLenses ''Deps
 
+instance Monoid Deps where
+    mempty = Deps { _names = M.empty, _deps = M.empty }
+
+    mappend a b = flip execState a $ do
+        let b' = execState (iforMOf_ (names.>itraversed) a rename) b
+        iforMOf_ (names.>itraversed) b' rename
+        names %= M.union (b'^.names)
+        deps %= M.unionWith mappend (b'^.deps)
+
 lookupNewName :: Deps -> ByteString -> ByteString
 lookupNewName r idx = M.findWithDefault idx idx (r^.names)
 
