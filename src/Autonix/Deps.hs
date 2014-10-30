@@ -6,15 +6,13 @@
 {-# LANGUAGE UndecidableInstances #-}
 
 module Autonix.Deps
-       ( Deps, names, deps
-       , add, rename
+       ( Deps, names, deps, rename
        , module Autonix.PkgDeps
        ) where
 
 import Control.Lens
 import Control.Monad.State
 import qualified Data.Map as M
-import Data.Maybe (fromMaybe)
 import Data.Monoid
 import qualified Data.Set as S
 import Prelude hiding (foldr)
@@ -74,8 +72,3 @@ instance Ixed Deps where
 instance At Deps where
     at idx f r =
         (deps . at (lookupNewName r idx)) (fmap (fmap $ applyRenames r) . f) r
-
-add :: (At s, Eq a, Monoid a, IxValue s ~ a) => Index s -> Lens' s a
-add idx =
-    at idx
-    . iso (fromMaybe mempty) (\a -> if a == mempty then Nothing else Just a)
