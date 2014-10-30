@@ -23,6 +23,7 @@ data Deps =
     Deps { _names :: Map ByteString ByteString
          , _deps :: Map ByteString PkgDeps
          }
+  deriving (Read, Show)
 makeLenses ''Deps
 
 instance Monoid Deps where

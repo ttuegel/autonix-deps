@@ -26,7 +26,7 @@ data PkgDeps =
     , _propagatedNativeBuildInputs :: Set ByteString
     , _propagatedUserEnvPkgs :: Set ByteString
     }
-  deriving (Eq, Ord)
+  deriving (Eq, Ord, Read, Show)
 makeLenses ''PkgDeps
 
 instance Monoid PkgDeps where
