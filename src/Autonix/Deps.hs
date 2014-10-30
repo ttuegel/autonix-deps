@@ -56,14 +56,24 @@ rename old new = do
     names %= M.map (\tgt -> if tgt == old then new else tgt)
     deps %= M.map (renamePkgDeps old new)
 
+applyRenames :: Deps -> PkgDeps -> PkgDeps
+applyRenames r = execState $ do
+    buildInputs %= S.map (lookupNewName r)
+    propagatedBuildInputs %= S.map (lookupNewName r)
+    nativeBuildInputs %= S.map (lookupNewName r)
+    propagatedNativeBuildInputs %= S.map (lookupNewName r)
+    propagatedUserEnvPkgs %= S.map (lookupNewName r)
+
 type instance Index Deps = ByteString
 type instance IxValue Deps = PkgDeps
 
 instance Ixed Deps where
-    ix idx f r = (deps . ix (lookupNewName r idx)) f r
+    ix idx f r =
+        (deps . ix (lookupNewName r idx)) (fmap (applyRenames r) . f) r
 
 instance At Deps where
-    at idx f r = (deps . at (lookupNewName r idx)) f r
+    at idx f r =
+        (deps . at (lookupNewName r idx)) (fmap (fmap $ applyRenames r) . f) r
 
 add :: (At s, Eq a, Monoid a, IxValue s ~ a) => Index s -> Lens' s a
 add idx =
