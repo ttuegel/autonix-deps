@@ -13,9 +13,10 @@ import qualified Data.Set as S
 
 import Autonix.Analyze
 import Autonix.Deps
-import Autonix.PackageDeps
 
-generateDeps :: MonadIO m => [Analyzer (StateT Deps m)] -> StateT Deps m ()
+generateDeps :: MonadIO m
+             => [Analyzer (StateT Deps m)]
+             -> StateT Deps m ()
 generateDeps analyzers = do
     analyzePackages (analyzeFiles analyzers)
     get >>= writeDeps
@@ -23,24 +24,24 @@ generateDeps analyzers = do
 writeDeps :: MonadIO m => Deps -> m ()
 writeDeps = liftIO . B.writeFile "dependencies.nix" . depsToNix
 
-packageDeps :: (ByteString, PackageDeps) -> ByteString
+packageDeps :: (ByteString, PkgDeps) -> ByteString
 packageDeps (name, ds) =
     B.unlines
     [ "  " <> name <> " = {"
     , "    buildInputs = [ "
-      <> listInputs _buildInputs
+      <> listInputs buildInputs
       <> " ];"
     , "    nativeBuildInputs = [ "
-      <> listInputs _nativeBuildInputs
+      <> listInputs nativeBuildInputs
       <> " ];"
     , "    propagatedBuildInputs = [ "
-      <> listInputs _propagatedBuildInputs
+      <> listInputs propagatedBuildInputs
       <> " ];"
     , "    propagatedNativeBuildInputs = [ "
-      <> listInputs _propagatedNativeBuildInputs
+      <> listInputs propagatedNativeBuildInputs
       <> " ];"
     , "    propagatedUserEnvPkgs = [ "
-      <> listInputs _propagatedUserEnvPkgs
+      <> listInputs propagatedUserEnvPkgs
       <> " ];"
     , "  };"
     ]

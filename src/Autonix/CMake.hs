@@ -20,21 +20,21 @@ import Autonix.Regex
 detectCMake :: MonadState Deps m => Analyzer m
 detectCMake pkg =
     matchFileName "CMakeLists.txt" $ const
-    $ nativeBuildInputs . ix pkg %= S.insert "cmake"
+    $ add pkg . nativeBuildInputs %= S.insert "cmake"
 
 analyzeCMakePackages :: (MonadIO m, MonadState Deps m) => Analyzer m
 analyzeCMakePackages pkg = matchFileName "CMakeLists.txt" $ \getFile -> do
     contents <- liftIO getFile
     let new = concatMap (take 1 . drop 1) $ match regex contents
         regex = makeRegex "find_package\\([[:space:]]*([^[:space:],$\\)]+)"
-    buildInputs . ix pkg %= S.union (S.fromList new)
+    add pkg . buildInputs %= S.union (S.fromList new)
 
 analyzeCMakePrograms :: (MonadIO m, MonadState Deps m) => Analyzer m
 analyzeCMakePrograms pkg = matchFileName "CMakeLists.txt" $ \getFile -> do
     contents <- liftIO getFile
     let new = concatMap (take 1 . drop 1) $ match regex contents
         regex = makeRegex "find_program\\([[:space:]]*([^[:space:],$\\)]+)"
-    nativeBuildInputs . ix pkg %= S.union (S.fromList new)
+    add pkg . nativeBuildInputs %= S.union (S.fromList new)
 
 cmakeAnalyzers :: (MonadIO m, MonadState Deps m) => [Analyzer m]
 cmakeAnalyzers = [detectCMake, analyzeCMakePackages, analyzeCMakePrograms]
