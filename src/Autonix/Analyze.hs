@@ -9,7 +9,9 @@ module Autonix.Analyze
 
 import Control.Lens hiding (act)
 import Control.Monad.State
+import qualified Data.Map as M
 import Data.Monoid
+import qualified Data.Set as S
 import Prelude hiding (mapM)
 import System.FilePath (takeFileName)
 
@@ -24,7 +26,9 @@ analyzePackages :: (MonadIO m, MonadState Deps m)
 analyzePackages perPackage = do
     manifest <- readManifest
     forM_ manifest $ \(pkg, _) -> at pkg .= Just mempty
+    let (pkgs, _) = unzip manifest
     mapM_ (uncurry perPackage) manifest
+    deps %= M.filterWithKey (\k _ -> S.member k $ S.fromList pkgs)
 
 analyzeFiles :: MonadIO m => [Analyzer m] -> ByteString -> FilePath -> m ()
 analyzeFiles analyzers pkg srcPath = do
