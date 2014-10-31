@@ -52,7 +52,8 @@ packageDeps (name, ds) =
 depsToNix :: Deps -> ByteString
 depsToNix (view deps -> ds) =
     B.unlines
-    ( [ "{ }:"
+    ( [ "# DO NOT EDIT! This file is generated automatically."
+      , "{ }:"
       , "{"
       ]
       ++ map packageDeps (M.toList ds) ++
