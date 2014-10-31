@@ -1,7 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ViewPatterns #-}
 
-module Autonix.Generate (generateDeps, writeDeps) where
+module Autonix.Generate (generateDeps, writeDeps, writeRenames) where
 
 import Control.Lens
 import Control.Monad.IO.Class
@@ -20,9 +20,17 @@ generateDeps :: MonadIO m
 generateDeps analyzers = do
     analyzePackages (analyzeFiles analyzers)
     get >>= writeDeps
+    get >>= writeRenames
 
 writeDeps :: MonadIO m => Deps -> m ()
 writeDeps = liftIO . B.writeFile "dependencies.nix" . depsToNix
+
+writeRenames :: MonadIO m => Deps -> m ()
+writeRenames ds = do
+    let renames = B.unlines $ do
+            (old, new) <- M.toList (ds^.names)
+            return $ old <> " " <> new
+    liftIO $ B.writeFile "renames.txt" renames
 
 packageDeps :: (ByteString, PkgDeps) -> ByteString
 packageDeps (name, ds) =
