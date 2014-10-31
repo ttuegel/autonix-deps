@@ -26,14 +26,16 @@ analyzeCMakePackages :: (MonadIO m, MonadState Deps m) => Analyzer m
 analyzeCMakePackages pkg = matchFileName "CMakeLists.txt" $ \getFile -> do
     contents <- liftIO getFile
     let new = concatMap (take 1 . drop 1) $ match regex contents
-        regex = makeRegex "find_package\\([[:space:]]*([^[:space:],$\\)]+)"
+        regex = makeRegex
+                "find_package[[:space:]]*\\([[:space:]]*([^[:space:],$\\)]+)"
     ix pkg . buildInputs %= S.union (S.fromList new)
 
 analyzeCMakePrograms :: (MonadIO m, MonadState Deps m) => Analyzer m
 analyzeCMakePrograms pkg = matchFileName "CMakeLists.txt" $ \getFile -> do
     contents <- liftIO getFile
     let new = concatMap (take 1 . drop 1) $ match regex contents
-        regex = makeRegex "find_program\\([[:space:]]*([^[:space:],$\\)]+)"
+        regex = makeRegex
+                "find_program[[:space:]]*\\([[:space:]]*([^[:space:],$\\)]+)"
     ix pkg . nativeBuildInputs %= S.union (S.fromList new)
 
 cmakeAnalyzers :: (MonadIO m, MonadState Deps m) => [Analyzer m]
