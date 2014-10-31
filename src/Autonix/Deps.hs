@@ -54,6 +54,8 @@ rename old new = do
     names %= M.insert old new
     names %= M.map (\tgt -> if tgt == old then new else tgt)
     deps %= M.map (renamePkgDeps old new)
+    ds <- get
+    deps %= M.mapKeysWith mappend (lookupNewName ds)
 
 applyRenames :: Deps -> PkgDeps -> PkgDeps
 applyRenames r = execState $ do
