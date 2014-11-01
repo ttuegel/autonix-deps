@@ -1,3 +1,4 @@
+{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ViewPatterns #-}
 
@@ -5,6 +6,7 @@ module Autonix.Generate (generateDeps, writeDeps, writeRenames) where
 
 import Control.Lens
 import Control.Monad.IO.Class
+import Control.Monad.Trans.Resource
 import Control.Monad.State
 import qualified Data.ByteString.Char8 as B
 import qualified Data.Map as M
@@ -15,8 +17,8 @@ import Autonix.Analyze
 import Autonix.Args
 import Autonix.Deps
 
-generateDeps :: MonadIO m
-             => [Analyzer (StateT Deps m)]
+generateDeps :: (MonadBaseControl IO m, MonadIO m, MonadThrow m)
+             => [Analyzer (ResourceT (StateT Deps m))]
              -> StateT Deps m ()
 generateDeps analyzers = do
     withArgs $ analyzePackages (analyzeFiles analyzers)
