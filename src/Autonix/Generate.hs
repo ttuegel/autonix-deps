@@ -12,13 +12,14 @@ import Data.Monoid
 import qualified Data.Set as S
 
 import Autonix.Analyze
+import Autonix.Args
 import Autonix.Deps
 
 generateDeps :: MonadIO m
              => [Analyzer (StateT Deps m)]
              -> StateT Deps m ()
 generateDeps analyzers = do
-    analyzePackages (analyzeFiles analyzers)
+    withArgs $ analyzePackages (analyzeFiles analyzers)
     get >>= writeDeps
     get >>= writeRenames
 
@@ -55,7 +56,7 @@ packageDeps (name, ds) =
     ]
   where
     listInputs l = B.unwords $ map quoted $ S.toList $ ds^.l
-    quoted str = "\"" <> str <> "\""
+    quoted x = "\"" <> x <> "\""
 
 depsToNix :: Deps -> ByteString
 depsToNix (view deps -> ds) =

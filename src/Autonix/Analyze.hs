@@ -22,9 +22,12 @@ import Autonix.Manifest
 type Analyzer m = ByteString -> FilePath -> IO ByteString -> m ()
 
 analyzePackages :: (MonadIO m, MonadState Deps m)
-                => (ByteString -> FilePath -> m a) -> m ()
-analyzePackages perPackage = do
-    manifest <- readManifest
+                => (ByteString -> FilePath -> m a)
+                -> FilePath -> Maybe FilePath -> m ()
+analyzePackages perPackage manifestPath renamesPath = do
+    manifest <- readManifest manifestPath
+    renames <- readRenames renamesPath
+    names %= flip M.union renames
     forM_ manifest $ \(pkg, _) -> at pkg .= Just mempty
     let (pkgs, _) = unzip manifest
     mapM_ (uncurry perPackage) manifest
