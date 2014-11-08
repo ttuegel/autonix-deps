@@ -1,4 +1,5 @@
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE OverloadedStrings #-}
 
 module Autonix.Analyze
        ( Analyzer
@@ -10,6 +11,7 @@ import Codec.Archive
 import Control.Lens hiding (act)
 import Control.Monad.State
 import Control.Monad.Trans.Resource
+import qualified Data.ByteString.Char8 as B
 import Data.Conduit
 import qualified Data.Map as M
 import Data.Monoid
@@ -38,5 +40,9 @@ sequenceSinks_ = void . sequenceSinks
 
 analyzeFiles :: (MonadBaseControl IO m, MonadIO m, MonadThrow m)
              => [Analyzer (ResourceT m)] -> ByteString -> FilePath -> m ()
-analyzeFiles analyzers pkg src = runResourceT
-    $ sourceArchive src $$ sequenceSinks_ (map ($ pkg) analyzers)
+analyzeFiles analyzers pkg src
+    | null src = error $ B.unpack $ "No store path specified for " <> pkg
+    | otherwise = do
+        liftIO $ B.putStrLn $ "package " <> pkg
+        runResourceT
+            $ sourceArchive src $$ sequenceSinks_ (map ($ pkg) analyzers)
