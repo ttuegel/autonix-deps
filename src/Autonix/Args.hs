@@ -12,5 +12,5 @@ withArgs child =
     parser = child
              <$> strArgument (metavar "MANIFEST")
              <*> option
-                (return . Just)
+                (Just <$> str)
                 (long "renames" <> metavar "FILENAME" <> value Nothing)
