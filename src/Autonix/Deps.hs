@@ -4,6 +4,7 @@
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE UndecidableInstances #-}
+{-# LANGUAGE ViewPatterns #-}
 
 module Autonix.Deps
        ( Deps, names, deps, rename
@@ -12,6 +13,8 @@ module Autonix.Deps
 
 import Control.Lens
 import Control.Monad.State
+import qualified Data.ByteString.Char8 as B
+import qualified Data.Char as Char
 import qualified Data.Map as M
 import Data.Monoid
 import qualified Data.Set as S
@@ -36,10 +39,12 @@ instance Monoid Deps where
         deps %= M.unionWith mappend (b'^.deps)
 
 lookupNewName :: Deps -> ByteString -> ByteString
-lookupNewName r idx = M.findWithDefault idx idx (r^.names)
+lookupNewName r (B.map Char.toLower -> idx) =
+  M.findWithDefault idx idx (r^.names)
 
 renamePkgDeps :: ByteString -> ByteString -> PkgDeps -> PkgDeps
-renamePkgDeps old new = execState $ do
+renamePkgDeps old new =
+  execState $ do
     buildInputs %= S.map go
     nativeBuildInputs %= S.map go
     propagatedBuildInputs %= S.map go
@@ -50,7 +55,7 @@ renamePkgDeps old new = execState $ do
            | otherwise = pkg
 
 rename :: (MonadState Deps m) => ByteString -> ByteString -> m ()
-rename old new = do
+rename (B.map Char.toLower -> old) (B.map Char.toLower -> new) = do
     names %= M.insert old new
     names %= M.map (\tgt -> if tgt == old then new else tgt)
     deps %= M.map (renamePkgDeps old new)
