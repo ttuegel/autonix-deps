@@ -1,0 +1,3 @@
+[submodule "libarchive-conduit"]
+	path = libarchive-conduit
+	url = https://github.com/ttuegel/libarchive-conduit.git

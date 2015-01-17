@@ -1,7 +1,7 @@
-{ nixpkgs ? import <nixpkgs> {}
-, haskellPackages ? nixpkgs.haskellPackages
-}:
-
-haskellPackages.callPackage ./default.nix {
-  libarchiveConduit = haskellPackages.callPackage ../libarchive-conduit {};
-}
+with (import <nixpkgs> {});
+with pkgs;
+(haskellngPackages.callPackage ./. {
+  libarchive-conduit = haskellngPackages.callPackage ./libarchive-conduit {
+    archive = pkgs.libarchive;
+  };
+}).env
