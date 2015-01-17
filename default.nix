@@ -4,7 +4,7 @@
 }:
 mkDerivation {
   pname = "autonix-deps";
-  version = "0.1.0.0";
+  version = "0.1.0.1";
   src = ./.;
   buildDepends = [
     base bytestring conduit containers errors filepath lens
