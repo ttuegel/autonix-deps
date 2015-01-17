@@ -29,11 +29,19 @@ writeDeps :: MonadIO m => Deps -> m ()
 writeDeps = liftIO . B.writeFile "dependencies.nix" . depsToNix
 
 writeRenames :: MonadIO m => Deps -> m ()
-writeRenames ds = do
-    let renames = B.unlines $ do
-            (old, new) <- M.toList (ds^.names)
-            return $ old <> " " <> new
-    liftIO $ B.writeFile "renames.txt" renames
+writeRenames ds = liftIO $ do
+  let renames = do
+        (old, new) <- M.toList (ds^.names)
+        return ("\"" <> old <> "\" = \"" <> new <> "\"")
+  B.writeFile
+    "renames.nix"
+    (B.unlines
+      ([ "# DO NOT EDIT! This file is generated automatically."
+       , "{ }:"
+       , "{"
+       ]
+       ++ renames ++
+       [ "}" ]))
 
 packageDeps :: (ByteString, PkgDeps) -> ByteString
 packageDeps (name, ds) =
