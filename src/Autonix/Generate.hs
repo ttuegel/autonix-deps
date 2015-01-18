@@ -32,7 +32,7 @@ writeRenames :: MonadIO m => Deps -> m ()
 writeRenames ds = liftIO $ do
   let renames = do
         (old, new) <- M.toList (ds^.names)
-        return ("\"" <> old <> "\" = \"" <> new <> "\"")
+        return ("\"" <> old <> "\" = \"" <> new <> "\";")
   B.writeFile
     "renames.nix"
     (B.unlines
