@@ -16,15 +16,16 @@ import Data.ByteString (ByteString)
 import Data.Map (Map)
 import Data.Monoid
 import Data.Set (Set)
+import Data.Text (Text)
 import qualified Data.Set as S
 
 data PkgDeps =
     PkgDeps
-    { _buildInputs :: Set ByteString
-    , _nativeBuildInputs :: Set ByteString
-    , _propagatedBuildInputs :: Set ByteString
-    , _propagatedNativeBuildInputs :: Set ByteString
-    , _propagatedUserEnvPkgs :: Set ByteString
+    { _buildInputs :: Set Text
+    , _nativeBuildInputs :: Set Text
+    , _propagatedBuildInputs :: Set Text
+    , _propagatedNativeBuildInputs :: Set Text
+    , _propagatedUserEnvPkgs :: Set Text
     }
   deriving (Eq, Ord, Read, Show)
 makeLenses ''PkgDeps

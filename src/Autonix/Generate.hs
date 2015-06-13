@@ -12,6 +12,9 @@ import qualified Data.ByteString.Char8 as B
 import qualified Data.Map as M
 import Data.Monoid
 import qualified Data.Set as S
+import Data.Text (Text)
+import qualified Data.Text as T
+import qualified Data.Text.IO as T
 
 import Autonix.Analyze
 import Autonix.Args
@@ -26,16 +29,16 @@ generateDeps analyzers = do
     get >>= writeRenames
 
 writeDeps :: MonadIO m => Deps -> m ()
-writeDeps = liftIO . B.writeFile "dependencies.nix" . depsToNix
+writeDeps = liftIO . T.writeFile "dependencies.nix" . depsToNix
 
 writeRenames :: MonadIO m => Deps -> m ()
 writeRenames ds = liftIO $ do
   let renames = do
         (old, new) <- M.toList (ds^.names)
         return ("\"" <> old <> "\" = \"" <> new <> "\";")
-  B.writeFile
+  T.writeFile
     "renames.nix"
-    (B.unlines
+    (T.unlines
       ([ "# DO NOT EDIT! This file is generated automatically."
        , "{ }:"
        , "{"
@@ -43,9 +46,9 @@ writeRenames ds = liftIO $ do
        ++ renames ++
        [ "}" ]))
 
-packageDeps :: (ByteString, PkgDeps) -> ByteString
+packageDeps :: (Text, PkgDeps) -> Text
 packageDeps (name, ds) =
-    B.unlines
+    T.unlines
     [ "  " <> name <> " = {"
     , "    buildInputs = [ "
       <> listInputs buildInputs
@@ -65,12 +68,12 @@ packageDeps (name, ds) =
     , "  };"
     ]
   where
-    listInputs l = B.unwords $ map quoted $ S.toList $ ds^.l
+    listInputs l = T.unwords $ map quoted $ S.toList $ ds^.l
     quoted x = "\"" <> x <> "\""
 
-depsToNix :: Deps -> ByteString
+depsToNix :: Deps -> Text
 depsToNix (view deps -> ds) =
-    B.unlines
+    T.unlines
     ( [ "# DO NOT EDIT! This file is generated automatically."
       , "{ }:"
       , "{"

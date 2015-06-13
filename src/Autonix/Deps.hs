@@ -15,13 +15,14 @@ import Control.Lens
 import Control.Monad.State
 import qualified Data.Map as M
 import Data.Monoid
+import Data.Text (Text)
 import Prelude hiding (foldr)
 
 import Autonix.PkgDeps
 
 data Deps =
-    Deps { _names :: Map ByteString ByteString
-         , _deps :: Map ByteString PkgDeps
+    Deps { _names :: Map Text Text
+         , _deps :: Map Text PkgDeps
          }
   deriving (Read, Show)
 makeLenses ''Deps
@@ -35,10 +36,10 @@ instance Monoid Deps where
       names %= M.union (b'^.names)
       deps %= M.unionWith mappend (b'^.deps)
 
-rename :: (MonadState Deps m) => ByteString -> ByteString -> m ()
+rename :: (MonadState Deps m) => Text -> Text -> m ()
 rename old new = names %= M.insert old new
 
-type instance Index Deps = ByteString
+type instance Index Deps = Text
 type instance IxValue Deps = PkgDeps
 
 instance Ixed Deps where
