@@ -4,23 +4,17 @@
 
 module Autonix.Generate (generateDeps, writeRenames) where
 
-import Control.Lens
 import Control.Monad.IO.Class
 import Control.Monad.Trans.Resource
 import Control.Monad.State
-import Data.Aeson
-import qualified Data.ByteString.Char8 as B
+import Data.Aeson.Encode.Pretty (encodePretty)
 import qualified Data.ByteString.Lazy as BL
-import qualified Data.Map as M
-import Data.Monoid
-import qualified Data.Set as S
+import Data.Map.Strict (Map)
 import Data.Text (Text)
-import qualified Data.Text as T
-import qualified Data.Text.IO as T
 
 import Autonix.Analyze
 import Autonix.Args
-import Autonix.Deps
+import Autonix.Package (Package)
 import Autonix.Renames
 
 generateDeps :: (MonadBaseControl IO m, MonadIO m, MonadThrow m)
@@ -28,7 +22,12 @@ generateDeps :: (MonadBaseControl IO m, MonadIO m, MonadThrow m)
              -> StateT Renames m ()
 generateDeps analyzers = do
     pkgs <- withArgs $ analyzePackages (analyzeFiles analyzers)
-    get >>= writeRenames
+    renames <- get
+    writeRenames renames
+    writePackages (applyRenames renames pkgs)
 
 writeRenames :: MonadIO m => Renames -> m ()
-writeRenames = liftIO . BL.writeFile "renames.json" . encode
+writeRenames = liftIO . BL.writeFile "renames.json" . encodePretty
+
+writePackages :: MonadIO m => Map Text Package -> m ()
+writePackages = liftIO . BL.writeFile "packages.json" . encodePretty

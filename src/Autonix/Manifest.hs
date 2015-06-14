@@ -1,16 +1,11 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE OverloadedStrings #-}
 
-module Autonix.Manifest (Manifest(..), Src(..), readManifests, readRenames) where
+module Autonix.Manifest (Manifest(..), Src(..), readManifests) where
 
-import Control.Applicative
-import Control.Error
-import Control.Monad (liftM)
 import Control.Monad.IO.Class
 import Data.Aeson
 import Data.Aeson.Types
-import Data.ByteString (ByteString)
-import qualified Data.ByteString.Char8 as B
 import qualified Data.ByteString.Lazy as BL
 import qualified Data.Char as Char
 import Data.Map (Map)
@@ -18,8 +13,6 @@ import qualified Data.Map as M
 import Data.Text (Text)
 import qualified Data.Text as T
 import GHC.Generics
-
-import Autonix.Renames
 
 data Src =
   Src { src_url :: FilePath
@@ -77,11 +70,3 @@ readManifests path = do
         LT -> r
         EQ -> l
         GT -> l
-
-readRenames :: MonadIO m => Maybe FilePath -> m Renames
-readRenames Nothing = return M.empty
-readRenames (Just path) = do
-  mrenames <- decode' <$> liftIO (BL.readFile path)
-  case mrenames of
-    Nothing -> return M.empty
-    Just renames -> return renames
