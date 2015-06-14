@@ -48,10 +48,10 @@ instance ToJSON Manifest where
 
 readManifests :: MonadIO m => FilePath -> m (Map Text Manifest)
 readManifests path = do
-  mmanifests <- decode' <$> liftIO (BL.readFile path)
-  case mmanifests :: Maybe [Manifest] of
-    Nothing -> error "readManifests: could not read manifest.json"
-    Just manifests -> return (foldr assemble M.empty manifests)
+  emanifests <- eitherDecode' <$> liftIO (BL.readFile path)
+  case emanifests :: Either String [Manifest] of
+    Left err -> error ("readManifests: could not read manifest.json\n" ++ err)
+    Right manifests -> return (foldr assemble M.empty manifests)
   where
     assemble :: Manifest -> Map Text Manifest -> Map Text Manifest
     assemble manifest =
