@@ -19,9 +19,10 @@ import Autonix.Renames
 
 generateDeps :: (MonadBaseControl IO m, MonadIO m, MonadThrow m)
              => [Analyzer (StateT Renames m)]
+             -> (Map Text Package -> StateT Renames m (Map Text Package))
              -> StateT Renames m ()
-generateDeps analyzers = do
-    pkgs <- withArgs $ analyzePackages (analyzeFiles analyzers)
+generateDeps analyzers post = do
+    pkgs <- withArgs (analyzePackages (analyzeFiles analyzers)) >>= post
     renames <- get
     writeRenames renames
     writePackages (applyRenames renames pkgs)
