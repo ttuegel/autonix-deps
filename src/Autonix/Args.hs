@@ -1,6 +1,5 @@
 module Autonix.Args where
 
-import Control.Applicative
 import Control.Monad (join)
 import Control.Monad.IO.Class
 import Options.Applicative
