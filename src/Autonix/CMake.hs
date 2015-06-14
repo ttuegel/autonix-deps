@@ -23,13 +23,12 @@ import Autonix.Package (Package)
 import qualified Autonix.Package as Package
 import Autonix.Regex
 
-detectCMake :: MonadState Package m => Analyzer m
-detectCMake _ = awaitForever $ \(path, _) -> do
+detectCMake :: Monad m => Analyzer m
+detectCMake _ = awaitForever $ \(path, _) ->
     when (takeFileName path == "CMakeLists.txt")
         $ Package.nativeBuildInputs %= S.insert "cmake"
 
-analyzeCMakeLists :: (MonadIO m, MonadState Package m)
-                  => (Text -> Package -> Package) -> Analyzer m
+analyzeCMakeLists :: MonadIO m => (Text -> Package -> Package) -> Analyzer m
 analyzeCMakeLists addDep _ = awaitForever $ \(path, contents) -> do
     when (takeFileName path == "CMakeLists.txt") $ do
         let new = map T.decodeUtf8
@@ -39,13 +38,13 @@ analyzeCMakeLists addDep _ = awaitForever $ \(path, contents) -> do
                     "find_package[[:space:]]*\\([[:space:]]*([^[:space:],$\\)]+)"
         mapM_ (modify . addDep) new
 
-analyzeCMakePackages :: (MonadIO m, MonadState Package m) => Analyzer m
+analyzeCMakePackages :: MonadIO m => Analyzer m
 analyzeCMakePackages =
   analyzeCMakeLists (\dep -> Package.buildInputs %~ S.insert dep)
 
-analyzeCMakePrograms :: (MonadIO m, MonadState Package m) => Analyzer m
+analyzeCMakePrograms :: MonadIO m => Analyzer m
 analyzeCMakePrograms =
   analyzeCMakeLists (\dep -> Package.nativeBuildInputs %~ S.insert dep)
 
-cmakeAnalyzers :: (MonadIO m, MonadState Package m) => [Analyzer m]
+cmakeAnalyzers :: MonadIO m => [Analyzer m]
 cmakeAnalyzers = [detectCMake, analyzeCMakePackages, analyzeCMakePrograms]
