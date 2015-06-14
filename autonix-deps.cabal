@@ -28,6 +28,7 @@ library
     Autonix.Package
     Autonix.Regex
     Autonix.Renames
+    Autonix.Src
   build-depends:
       base >=4.7 && <5
     , aeson >= 0.9

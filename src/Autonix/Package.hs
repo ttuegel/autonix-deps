@@ -19,7 +19,7 @@ import qualified Data.Set as S
 import Data.Text (Text)
 import GHC.Generics
 
-import Autonix.Manifest (Src)
+import Autonix.Src (Src)
 
 data Package =
   Package { _name :: Text

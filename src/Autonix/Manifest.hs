@@ -1,8 +1,13 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TemplateHaskell #-}
 
-module Autonix.Manifest (Manifest(..), Src(..), readManifests) where
+module Autonix.Manifest
+       ( Manifest, name, store, src
+       , readManifests
+       ) where
 
+import Control.Lens
 import Control.Monad.IO.Class
 import Data.Aeson
 import Data.Aeson.Types
@@ -14,31 +19,18 @@ import Data.Text (Text)
 import qualified Data.Text as T
 import GHC.Generics
 
-data Src =
-  Src { src_url :: FilePath
-      , src_sha256 :: Text
-      , src_name :: Text
-      }
-  deriving Generic
-
-srcOptions :: Options
-srcOptions = defaultOptions { fieldLabelModifier = ("src_" ++) }
-
-instance FromJSON Src where
-  parseJSON = genericParseJSON srcOptions
-
-instance ToJSON Src where
-  toJSON = genericToJSON srcOptions
+import Autonix.Src (Src)
 
 data Manifest =
-  Manifest { manifest_name :: Text
-           , manifest_store :: FilePath
-           , manifest_src :: Src
+  Manifest { _name :: Text
+           , _store :: FilePath
+           , _src :: Src
            }
   deriving Generic
+makeLenses ''Manifest
 
 manifestOptions :: Options
-manifestOptions = defaultOptions { fieldLabelModifier = ("manifest_" ++) }
+manifestOptions = defaultOptions { fieldLabelModifier = tail }
 
 instance FromJSON Manifest where
   parseJSON = genericParseJSON manifestOptions
@@ -55,18 +47,21 @@ readManifests path = do
   where
     assemble :: Manifest -> Map Text Manifest -> Map Text Manifest
     assemble manifest =
-      M.insertWith keepLatestVersion (onlyName $ manifest_name manifest) manifest
+      M.insertWith keepLatestVersion (onlyName $ view name manifest) manifest
+
     onlyName :: Text -> Text
     onlyName nameAndVersion =
       T.intercalate "-"
       $ takeWhile headNotDigit
       $ T.splitOn "-" nameAndVersion
+
     headNotDigit :: Text -> Bool
     headNotDigit txt | T.null txt = True
                      | otherwise = Char.isDigit (T.head txt)
+
     keepLatestVersion :: Manifest -> Manifest -> Manifest
     keepLatestVersion l r =
-      case compare (manifest_name l) (manifest_name r) of
+      case compare (l^.name) (r^.name) of
         LT -> r
         EQ -> l
         GT -> l

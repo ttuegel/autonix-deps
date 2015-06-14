@@ -39,12 +39,12 @@ sequenceSinks_ = void . sequenceSinks
 analyzeFiles :: (MonadBaseControl IO m, MonadIO m, MonadThrow m)
              => [Analyzer m] -> Manifest -> m Package
 analyzeFiles analyzers manifest
-    | null store = error $ T.unpack $ "No store path specified for " <> name
+    | null (manifest^.store) = error $ T.unpack noStore
     | otherwise = do
-        liftIO $ T.putStrLn $ "package " <> name
-        let conduits = sourceArchive store
-                       $$ sequenceSinks_ (map ($ name) analyzers)
-        execStateT (runResourceT conduits) (package name (manifest_src manifest))
+        liftIO $ T.putStrLn $ "package " <> (manifest^.name)
+        let conduits = sourceArchive (manifest^.store)
+                       $$ sequenceSinks_ (map ($ (manifest^.name)) analyzers)
+            pkg = package (manifest^.name) (manifest^.src)
+        execStateT (runResourceT conduits) pkg
   where
-    name = manifest_name manifest
-    store = manifest_store manifest
+    noStore = "No store path specified for " <> (manifest^.name)
