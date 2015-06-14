@@ -1,7 +1,10 @@
+{-# LANGUAGE FlexibleContexts #-}
+
 module Autonix.Renames where
 
 import Control.Lens
 import Control.Monad.IO.Class
+import Control.Monad.State
 import Data.Aeson (decode')
 import qualified Data.ByteString.Lazy as BL
 import Data.Map.Strict (Map)
@@ -30,3 +33,6 @@ readRenames :: MonadIO m => Maybe FilePath -> m Renames
 readRenames Nothing = return M.empty
 readRenames (Just path) =
   fromMaybe M.empty . decode' <$> liftIO (BL.readFile path)
+
+rename :: MonadState Renames m => Text -> Text -> m ()
+rename old new = modify (M.insert old new)

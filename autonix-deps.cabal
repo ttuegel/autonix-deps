@@ -23,11 +23,9 @@ library
     Autonix.Analyze
     Autonix.Args
     Autonix.CMake
-    Autonix.Deps
     Autonix.Generate
     Autonix.Manifest
     Autonix.Package
-    Autonix.PkgDeps
     Autonix.Regex
     Autonix.Renames
   build-depends:

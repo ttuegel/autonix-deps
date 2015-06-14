@@ -11,14 +11,15 @@ import Codec.Archive
 import Control.Lens
 import Control.Monad.State
 import Control.Monad.Trans.Resource
+import Data.ByteString (ByteString)
 import Data.Conduit
+import Data.Map (Map)
 import Data.Monoid
 import Data.Text (Text)
 import qualified Data.Text as T
 import qualified Data.Text.IO as T
 import Prelude hiding (mapM)
 
-import Autonix.Deps
 import Autonix.Manifest
 import Autonix.Package (Package, package)
 import Autonix.Renames
