@@ -34,7 +34,7 @@ data Package =
 makeLenses ''Package
 
 packageOptions :: Options
-packageOptions = defaultOptions { fieldLabelModifier = ("_" ++) }
+packageOptions = defaultOptions { fieldLabelModifier = tail }
 
 instance FromJSON Package where
   parseJSON = genericParseJSON packageOptions
