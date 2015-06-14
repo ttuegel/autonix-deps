@@ -23,30 +23,31 @@ import Prelude hiding (mapM)
 
 import Autonix.Deps
 import Autonix.Manifest
+import Autonix.Package
+import Autonix.Renames
 
-type Analyzer m = Text -> Sink (FilePath, ByteString) m ()
+type Analyzer m = Text -> Sink (FilePath, ByteString) (ResourceT (StateT Package m)) ()
 
-analyzePackages :: (MonadIO m, MonadState Deps m)
-                => (Manifest -> m a)
-                -> FilePath -> m ()
+analyzePackages :: (MonadIO m, MonadState Renames m)
+                => (Manifest -> m Package)
+                -> FilePath -> m (Map Text Package)
 analyzePackages perPackage manifestPath = do
-    manifest <- readManifest manifestPath
-    let pkgs = map manifest_name manifest
-    forM_ pkgs $ \pkg -> at pkg .= Just mempty
-    mapM_ perPackage manifest
-    deps %= M.filterWithKey (\k _ -> S.member k $ S.fromList pkgs)
+    manifests <- readManifests manifestPath
+    mapM perPackage manifests
 
 sequenceSinks_ :: (Traversable f, Monad m) => f (Sink i m ()) -> Sink i m ()
 sequenceSinks_ = void . sequenceSinks
 
 analyzeFiles :: (MonadBaseControl IO m, MonadIO m, MonadThrow m)
-             => [Analyzer (ResourceT m)] -> Manifest -> m ()
+             => [Analyzer m] -> Manifest -> m Package
 analyzeFiles analyzers manifest
     | null src = error $ T.unpack $ "No store path specified for " <> pkg
     | otherwise = do
         liftIO $ T.putStrLn $ "package " <> pkg
-        runResourceT
-            $ sourceArchive src $$ sequenceSinks_ (map ($ pkg) analyzers)
+        let conduits = sourceArchive src $$ sequenceSinks_ (map ($ pkg) analyzers)
+        execStateT (runResourceT conduits) (package
+                                            (manifest_name manifest)
+                                            (manifest_src manifest))
   where
     pkg = manifest_name manifest
     src = manifest_store manifest

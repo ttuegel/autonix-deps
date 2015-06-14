@@ -26,8 +26,10 @@ library
     Autonix.Deps
     Autonix.Generate
     Autonix.Manifest
+    Autonix.Package
     Autonix.PkgDeps
     Autonix.Regex
+    Autonix.Renames
   build-depends:
       base >=4.7 && <5
     , aeson >= 0.9

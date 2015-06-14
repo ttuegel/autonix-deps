@@ -1,6 +1,7 @@
 {-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE OverloadedStrings #-}
 
-module Autonix.Manifest (Manifest(..), Src(..), readManifest, readRenames) where
+module Autonix.Manifest (Manifest(..), Src(..), readManifests, readRenames) where
 
 import Control.Applicative
 import Control.Error
@@ -11,10 +12,14 @@ import Data.Aeson.Types
 import Data.ByteString (ByteString)
 import qualified Data.ByteString.Char8 as B
 import qualified Data.ByteString.Lazy as BL
+import qualified Data.Char as Char
 import Data.Map (Map)
 import qualified Data.Map as M
 import Data.Text (Text)
+import qualified Data.Text as T
 import GHC.Generics
+
+import Autonix.Renames
 
 data Src =
   Src { src_url :: FilePath
@@ -48,19 +53,35 @@ instance FromJSON Manifest where
 instance ToJSON Manifest where
   toJSON = genericToJSON manifestOptions
 
-readManifest :: MonadIO m => FilePath -> m [Manifest]
-readManifest path =
-    liftM
-    (fromMaybe $ error "malformed manifest.xml")
-    (liftIO $ decode' <$> BL.readFile path)
-
-readRenames :: MonadIO m => Maybe FilePath -> m (Map ByteString ByteString)
-readRenames renamesPath = do
-    case renamesPath of
-        Nothing -> return M.empty
-        Just path ->
-            liftM (M.fromList . map (toPair . B.words) . B.lines)
-            $ liftIO $ B.readFile path
+readManifests :: MonadIO m => FilePath -> m (Map Text Manifest)
+readManifests path = do
+  mmanifests <- decode' <$> liftIO (BL.readFile path)
+  case mmanifests :: Maybe [Manifest] of
+    Nothing -> error "readManifests: could not read manifest.json"
+    Just manifests -> return (foldr assemble M.empty manifests)
   where
-    toPair [old, new] = (old, new)
-    toPair _ = error "readRenames: invalid line"
+    assemble :: Manifest -> Map Text Manifest -> Map Text Manifest
+    assemble manifest =
+      M.insertWith keepLatestVersion (onlyName $ manifest_name manifest) manifest
+    onlyName :: Text -> Text
+    onlyName nameAndVersion =
+      T.intercalate "-"
+      $ takeWhile headNotDigit
+      $ T.splitOn "-" nameAndVersion
+    headNotDigit :: Text -> Bool
+    headNotDigit txt | T.null txt = True
+                     | otherwise = Char.isDigit (T.head txt)
+    keepLatestVersion :: Manifest -> Manifest -> Manifest
+    keepLatestVersion l r =
+      case compare (manifest_name l) (manifest_name r) of
+        LT -> r
+        EQ -> l
+        GT -> l
+
+readRenames :: MonadIO m => Maybe FilePath -> m Renames
+readRenames Nothing = return M.empty
+readRenames (Just path) = do
+  mrenames <- decode' <$> liftIO (BL.readFile path)
+  case mrenames of
+    Nothing -> return M.empty
+    Just renames -> return renames

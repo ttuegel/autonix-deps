@@ -18,28 +18,34 @@ import System.FilePath (takeFileName)
 
 import Autonix.Analyze
 import Autonix.Deps
+import Autonix.Package (Package)
+import qualified Autonix.Package as Package
 import Autonix.Regex
 
-detectCMake :: MonadState Deps m => Analyzer m
+detectCMake :: MonadState Package m => Analyzer m
 detectCMake pkg = awaitForever $ \(path, _) -> do
     when (takeFileName path == "CMakeLists.txt")
-        $ ix pkg . nativeBuildInputs %= S.insert "cmake"
+        $ Package.nativeBuildInputs %= S.insert "cmake"
 
-analyzeCMakePackages :: (MonadIO m, MonadState Deps m) => Analyzer m
+analyzeCMakePackages :: (MonadIO m, MonadState Package m) => Analyzer m
 analyzeCMakePackages pkg = awaitForever $ \(path, contents) -> do
     when (takeFileName path == "CMakeLists.txt") $ do
-        let new = map T.decodeUtf8 $ concatMap (take 1 . drop 1) $ match regex contents
+        let new = map T.decodeUtf8
+                  $ concatMap (take 1 . drop 1)
+                  $ match regex contents
             regex = makeRegex
                     "find_package[[:space:]]*\\([[:space:]]*([^[:space:],$\\)]+)"
-        ix pkg . buildInputs %= S.union (S.fromList new)
+        Package.buildInputs %= S.union (S.fromList new)
 
-analyzeCMakePrograms :: (MonadIO m, MonadState Deps m) => Analyzer m
+analyzeCMakePrograms :: (MonadIO m, MonadState Package m) => Analyzer m
 analyzeCMakePrograms pkg = awaitForever $ \(path, contents) -> do
     when (takeFileName path == "CMakeLists.txt") $ do
-        let new = map T.decodeUtf8 $ concatMap (take 1 . drop 1) $ match regex contents
+        let new = map T.decodeUtf8
+                  $ concatMap (take 1 . drop 1)
+                  $ match regex contents
             regex = makeRegex
                     "find_program[[:space:]]*\\([[:space:]]*([^[:space:],$\\)]+)"
-        ix pkg . nativeBuildInputs %= S.union (S.fromList new)
+        Package.nativeBuildInputs %= S.union (S.fromList new)
 
-cmakeAnalyzers :: (MonadIO m, MonadState Deps m) => [Analyzer m]
+cmakeAnalyzers :: (MonadIO m, MonadState Package m) => [Analyzer m]
 cmakeAnalyzers = [detectCMake, analyzeCMakePackages, analyzeCMakePrograms]
