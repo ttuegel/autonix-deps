@@ -57,7 +57,7 @@ readManifests path = do
 
     headNotDigit :: Text -> Bool
     headNotDigit txt | T.null txt = True
-                     | otherwise = Char.isDigit (T.head txt)
+                     | otherwise = not $ Char.isDigit (T.head txt)
 
     keepLatestVersion :: Manifest -> Manifest -> Manifest
     keepLatestVersion l r =
