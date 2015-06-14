@@ -2,7 +2,8 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 module Autonix.CMake
-       ( analyzeCMakePackages
+       ( analyzeCMakeLists
+       , analyzeCMakePackages
        , analyzeCMakePrograms
        , cmakeAnalyzers
        , detectCMake
@@ -13,39 +14,38 @@ import Control.Monad.IO.Class
 import Control.Monad.State
 import Data.Conduit
 import qualified Data.Set as S
+import Data.Text (Text)
 import qualified Data.Text.Encoding as T
 import System.FilePath (takeFileName)
 
 import Autonix.Analyze
-import Autonix.Deps
 import Autonix.Package (Package)
 import qualified Autonix.Package as Package
 import Autonix.Regex
 
 detectCMake :: MonadState Package m => Analyzer m
-detectCMake pkg = awaitForever $ \(path, _) -> do
+detectCMake _ = awaitForever $ \(path, _) -> do
     when (takeFileName path == "CMakeLists.txt")
         $ Package.nativeBuildInputs %= S.insert "cmake"
 
-analyzeCMakePackages :: (MonadIO m, MonadState Package m) => Analyzer m
-analyzeCMakePackages pkg = awaitForever $ \(path, contents) -> do
+analyzeCMakeLists :: (MonadIO m, MonadState Package m)
+                  => (Text -> Package -> Package) -> Analyzer m
+analyzeCMakeLists addDep _ = awaitForever $ \(path, contents) -> do
     when (takeFileName path == "CMakeLists.txt") $ do
         let new = map T.decodeUtf8
                   $ concatMap (take 1 . drop 1)
                   $ match regex contents
             regex = makeRegex
                     "find_package[[:space:]]*\\([[:space:]]*([^[:space:],$\\)]+)"
-        Package.buildInputs %= S.union (S.fromList new)
+        mapM_ (modify . addDep) new
+
+analyzeCMakePackages :: (MonadIO m, MonadState Package m) => Analyzer m
+analyzeCMakePackages =
+  analyzeCMakeLists (\dep -> Package.buildInputs %~ S.insert dep)
 
 analyzeCMakePrograms :: (MonadIO m, MonadState Package m) => Analyzer m
-analyzeCMakePrograms pkg = awaitForever $ \(path, contents) -> do
-    when (takeFileName path == "CMakeLists.txt") $ do
-        let new = map T.decodeUtf8
-                  $ concatMap (take 1 . drop 1)
-                  $ match regex contents
-            regex = makeRegex
-                    "find_program[[:space:]]*\\([[:space:]]*([^[:space:],$\\)]+)"
-        Package.nativeBuildInputs %= S.union (S.fromList new)
+analyzeCMakePrograms =
+  analyzeCMakeLists (\dep -> Package.nativeBuildInputs %~ S.insert dep)
 
 cmakeAnalyzers :: (MonadIO m, MonadState Package m) => [Analyzer m]
 cmakeAnalyzers = [detectCMake, analyzeCMakePackages, analyzeCMakePrograms]
