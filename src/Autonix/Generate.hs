@@ -19,13 +19,13 @@ import Autonix.Renames
 
 generateDeps :: (MonadBaseControl IO m, MonadIO m, MonadThrow m)
              => [Analyzer (StateT Renames m)]
-             -> (Map Text Package -> StateT Renames m (Map Text Package))
+             -> (Map Text Package -> Map Text Package)
              -> StateT Renames m ()
 generateDeps analyzers post = do
-    pkgs <- withArgs (analyzePackages (analyzeFiles analyzers)) >>= post
+    pkgs <- withArgs (analyzePackages (analyzeFiles analyzers))
     renames <- get
     writeRenames renames
-    writePackages (applyRenames renames pkgs)
+    writePackages (post (applyRenames renames pkgs))
 
 writeRenames :: MonadIO m => Renames -> m ()
 writeRenames = liftIO . BL.writeFile "renames.json" . encodePretty
