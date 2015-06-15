@@ -2,7 +2,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ViewPatterns #-}
 
-module Autonix.Generate (generateDeps, writeRenames) where
+module Autonix.Generate (generateDeps) where
 
 import Control.Monad.IO.Class
 import Control.Monad.Trans.Resource
@@ -24,11 +24,7 @@ generateDeps :: (MonadBaseControl IO m, MonadIO m, MonadThrow m)
 generateDeps analyzers post = do
     pkgs <- withArgs (analyzePackages (analyzeFiles analyzers))
     renames <- get
-    writeRenames renames
     writePackages (post (applyRenames renames pkgs))
-
-writeRenames :: MonadIO m => Renames -> m ()
-writeRenames = liftIO . BL.writeFile "renames.json" . encodePretty
 
 writePackages :: MonadIO m => Map Text Package -> m ()
 writePackages = liftIO . BL.writeFile "packages.json" . encodePretty
