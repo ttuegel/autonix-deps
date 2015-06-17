@@ -4,8 +4,10 @@ import Control.Monad (join)
 import Control.Monad.IO.Class
 import Options.Applicative
 
-withArgs :: MonadIO m => (FilePath -> m a) -> m a
+withArgs :: MonadIO m => (FilePath -> Maybe FilePath -> m a) -> m a
 withArgs child =
     join $ liftIO $ execParser $ info (helper <*> parser) fullDesc
   where
-    parser = child <$> strArgument (metavar "MANIFEST")
+    parser = child
+             <$> strArgument (metavar "MANIFEST")
+             <*> ((Just <$> strOption (long "renames")) <|> pure Nothing)

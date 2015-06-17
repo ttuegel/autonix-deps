@@ -24,6 +24,7 @@ generateDeps :: (MonadBaseControl IO m, MonadIO m, MonadThrow m)
 generateDeps analyzers post = do
     pkgs <- withArgs (analyzePackages (analyzeFiles analyzers))
     renames <- get
+    writeRenames renames
     writePackages (post (applyRenames renames pkgs))
 
 writePackages :: MonadIO m => Map Text Package -> m ()

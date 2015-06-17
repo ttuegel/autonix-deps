@@ -30,9 +30,10 @@ type Analyzer m = Text -> Sink (FilePath, ByteString) (ResourceT (StateT Package
 
 analyzePackages :: (MonadIO m, MonadState Renames m)
                 => (Text -> Manifest -> m Package)
-                -> FilePath -> m (Map Text Package)
-analyzePackages perPackage manifestPath = do
+                -> FilePath -> Maybe FilePath -> m (Map Text Package)
+analyzePackages perPackage manifestPath renamePath = do
     manifests <- readManifests manifestPath
+    readRenames renamePath >>= put
     M.traverseWithKey perPackage manifests
 
 sequenceSinks_ :: (Traversable f, Monad m) => f (Sink i m ()) -> Sink i m ()

@@ -6,6 +6,7 @@ import Control.Lens
 import Control.Monad.IO.Class
 import Control.Monad.State
 import Data.Aeson (decode')
+import Data.Aeson.Encode.Pretty (encodePretty)
 import qualified Data.ByteString.Lazy as BL
 import Data.Map.Strict (Map)
 import qualified Data.Map.Strict as M
@@ -33,6 +34,9 @@ readRenames :: MonadIO m => Maybe FilePath -> m Renames
 readRenames Nothing = return M.empty
 readRenames (Just path) =
   fromMaybe M.empty . decode' <$> liftIO (BL.readFile path)
+
+writeRenames :: MonadIO m => Renames -> m ()
+writeRenames = liftIO . BL.writeFile "renames.json" . encodePretty
 
 rename :: MonadState Renames m => Text -> Text -> m ()
 rename old new = modify (M.insert old new)
