@@ -14,8 +14,7 @@ import Control.Monad.Trans.Resource
 import Data.ByteString (ByteString)
 import Data.Conduit
 import Data.Map (Map)
-import qualified Data.Map as M
-import Data.Monoid
+import Data.Semigroup
 import Data.Text (Text)
 import qualified Data.Text as T
 import qualified Data.Text.IO as T
@@ -24,30 +23,28 @@ import Prelude hiding (mapM)
 import Autonix.Manifest (Manifest, readManifests)
 import qualified Autonix.Manifest as Manifest
 import Autonix.Package (Package, package)
-import Autonix.Renames
 
-type Analyzer m = Text -> Sink (FilePath, ByteString) (ResourceT (StateT Package m)) ()
+type Analyzer m = Text -> Manifest -> Sink (FilePath, ByteString) (ResourceT m) ()
 
-analyzePackages :: (MonadIO m, MonadState Renames m)
-                => (Text -> Manifest -> m Package)
-                -> FilePath -> Maybe FilePath -> m (Map Text Package)
-analyzePackages perPackage manifestPath renamePath = do
+analyzePackages :: MonadIO m => (Text -> Manifest -> StateT (Map Text Package) m ())
+                -> FilePath -> m (Map Text Package)
+analyzePackages perPackage manifestPath = flip execStateT mempty $ do
     manifests <- readManifests manifestPath
-    readRenames renamePath >>= put
-    M.traverseWithKey perPackage manifests
+    imapM_ perPackage manifests
 
 sequenceSinks_ :: (Traversable f, Monad m) => f (Sink i m ()) -> Sink i m ()
 sequenceSinks_ = void . sequenceSinks
 
-analyzeFiles :: (MonadBaseControl IO m, MonadIO m, MonadThrow m)
-             => [Analyzer m] -> Text -> Manifest -> m Package
+analyzeFiles :: (MonadBaseControl IO m, MonadIO m, MonadState (Map Text Package) m, MonadThrow m)
+             => [Analyzer m] -> Text -> Manifest -> m ()
 analyzeFiles analyzers name m
     | null (m^.Manifest.store) = error (T.unpack noStore)
     | otherwise = do
         liftIO $ T.putStrLn $ "package " <> name
-        let conduits = sourceArchive (m^.Manifest.store)
-                       $$ sequenceSinks_ (map ($ name) analyzers)
+        let conduits = sourceArchive (m^.Manifest.store) $$ sequenceSinks_ sinks
+            sinks = analyzers >>= \analyze -> return (analyze name m)
             pkg = package (m^.Manifest.name) (m^.Manifest.src)
-        execStateT (runResourceT conduits) pkg
+        at name %= Just . maybe pkg (pkg <>)
+        runResourceT conduits
   where
     noStore = "No store path specified for " <> (m^.Manifest.name)

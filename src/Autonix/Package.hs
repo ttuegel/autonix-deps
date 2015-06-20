@@ -14,6 +14,7 @@ module Autonix.Package
 import Control.Lens
 import Data.Aeson
 import Data.Aeson.Types
+import Data.Semigroup
 import Data.Set (Set)
 import qualified Data.Set as S
 import Data.Text (Text)
@@ -41,6 +42,13 @@ instance FromJSON Package where
 
 instance ToJSON Package where
   toJSON = genericToJSON packageOptions
+
+instance Semigroup Package where
+  (<>) a =   (buildInputs <>~ a^.buildInputs)
+           . (nativeBuildInputs <>~ a^.nativeBuildInputs)
+           . (propagatedBuildInputs <>~ a^.propagatedBuildInputs)
+           . (propagatedNativeBuildInputs <>~ a^.propagatedNativeBuildInputs)
+           . (propagatedUserEnvPkgs <>~ a^.propagatedUserEnvPkgs)
 
 package :: Text -> Src -> Package
 package n s =
