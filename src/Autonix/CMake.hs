@@ -23,13 +23,14 @@ import Autonix.Analyze
 import Autonix.Package (Package)
 import qualified Autonix.Package as Package
 import Autonix.Regex
+import Autonix.Renames
 
-detectCMake :: (Monad m, MonadState (Map Text Package) m) => Analyzer m
+detectCMake :: (Monad m, MonadState (Map Text Package, Renames) m) => Analyzer m
 detectCMake pkg _ = awaitForever $ \(path, _) ->
     when (takeFileName path == "CMakeLists.txt")
-        $ ix pkg . Package.nativeBuildInputs %= S.insert "cmake"
+        $ _1 . ix pkg . Package.nativeBuildInputs %= S.insert "cmake"
 
-analyzeCMakePackages :: (MonadIO m, MonadState (Map Text Package) m) => Analyzer m
+analyzeCMakePackages :: (MonadIO m, MonadState (Map Text Package, Renames) m) => Analyzer m
 analyzeCMakePackages pkg _ = awaitForever $ \(path, contents) -> do
     when (takeFileName path == "CMakeLists.txt") $ do
         let new = S.fromList
@@ -38,9 +39,9 @@ analyzeCMakePackages pkg _ = awaitForever $ \(path, contents) -> do
                   $ match regex contents
             regex = makeRegex
                     "find_package[[:space:]]*\\([[:space:]]*([^[:space:],$\\)]+)"
-        ix pkg . Package.buildInputs <>= new
+        _1 . ix pkg . Package.buildInputs <>= new
 
-analyzeCMakePrograms :: (MonadIO m, MonadState (Map Text Package) m) => Analyzer m
+analyzeCMakePrograms :: (MonadIO m, MonadState (Map Text Package, Renames) m) => Analyzer m
 analyzeCMakePrograms pkg _ = awaitForever $ \(path, contents) -> do
     when (takeFileName path == "CMakeLists.txt") $ do
         let new = S.fromList
@@ -49,7 +50,7 @@ analyzeCMakePrograms pkg _ = awaitForever $ \(path, contents) -> do
                   $ match regex contents
             regex = makeRegex
                     "find_program[[:space:]]*\\([[:space:]]*([^[:space:],$\\)]+)"
-        ix pkg . Package.nativeBuildInputs <>= new
+        _1 . ix pkg . Package.nativeBuildInputs <>= new
 
-cmakeAnalyzers :: (MonadIO m, MonadState (Map Text Package) m) => [Analyzer m]
+cmakeAnalyzers :: (MonadIO m, MonadState (Map Text Package, Renames) m) => [Analyzer m]
 cmakeAnalyzers = [detectCMake, analyzeCMakePackages, analyzeCMakePrograms]

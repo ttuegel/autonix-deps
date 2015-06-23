@@ -15,14 +15,15 @@ import Options.Applicative
 
 import Autonix.Analyze
 import Autonix.Package (Package)
+import Autonix.Renames
 
 autonix :: (MonadBaseControl IO m, MonadIO m, MonadThrow m)
-        => [Analyzer (StateT (Map Text Package) m)]
-        -> (Map Text Package -> Map Text Package)
+        => [Analyzer (StateT (Map Text Package, Renames) m)]
         -> m ()
-autonix analyzers post = do
-    pkgs <- withArgs (analyzePackages (analyzeFiles analyzers))
-    writePackages (post pkgs)
+autonix analyzers = do
+    (pkgs, renames) <- withArgs (analyzePackages (analyzeFiles analyzers))
+    writePackages pkgs
+    writeRenames renames
 
 withArgs :: MonadIO m => (FilePath -> m a) -> m a
 withArgs child =
