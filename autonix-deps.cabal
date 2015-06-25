@@ -1,5 +1,5 @@
 name:                autonix-deps
-version:             0.2.0.0
+version:             0.3.0.0
 synopsis:            Library for Nix expression dependency generation
 license:             BSD3
 license-file:        LICENSE
